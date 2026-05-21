@@ -1,0 +1,122 @@
+/* 過去問: ボタンは上、解説は下（flex order）。開閉は details のネイティブ動作
+   ※ HTMLブロック内に空行を入れない */
+
+.ap-quiz {
+  display: flex;
+  flex-direction: column;
+  margin: 1em 0;
+}
+
+.ap-quiz .ap-reveal {
+  order: 1;
+  margin-bottom: 0.75em;
+}
+
+.ap-quiz .ap-question {
+  order: 2;
+  margin: 0;
+}
+
+.ap-quiz .ap-choices {
+  order: 3;
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5em 0 0;
+}
+
+.ap-quiz .ap-explanation {
+  order: 4;
+  display: none !important;
+  margin-top: 1em;
+  padding: 0.75em 1em;
+  border-left: 3px solid var(--color-accent, #7c3aed);
+  background: var(--background-secondary);
+  border-radius: 0 6px 6px 0;
+}
+
+.ap-quiz .ap-reveal[open] ~ .ap-explanation {
+  display: block !important;
+}
+
+.ap-quiz .ap-reveal > summary.ap-quiz-btn {
+  display: inline-block;
+  padding: 0.35em 0.85em;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 0.9em;
+  list-style: none;
+}
+
+.ap-quiz .ap-reveal > summary.ap-quiz-btn::-webkit-details-marker {
+  display: none;
+}
+
+.ap-quiz .ap-reveal > summary.ap-quiz-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+.ap-quiz .ap-reveal:not([open]) .ap-label-hide {
+  display: none;
+}
+
+.ap-quiz .ap-reveal[open] .ap-label-show {
+  display: none;
+}
+
+.ap-quiz .ap-reveal[open] .ap-label-hide {
+  display: inline;
+}
+
+/* 閉じた状態: 正誤・一行メモ・下線は非表示 */
+.ap-quiz .ap-choice-text::before {
+  content: none !important;
+}
+
+.ap-quiz .ap-choice-note {
+  display: none !important;
+}
+
+.ap-quiz .ap-mistake {
+  text-decoration: none !important;
+}
+
+/* 開いた状態: 正誤・一行メモ・下線（兄弟セレクタ。:has 不要） */
+.ap-quiz .ap-reveal[open] ~ .ap-choices .ap-choice-item.ap-correct .ap-choice-text::before {
+  content: "○ " !important;
+  color: #16a34a;
+  font-weight: bold;
+}
+
+.ap-quiz .ap-reveal[open] ~ .ap-choices .ap-choice-item.ap-wrong .ap-choice-text::before {
+  content: "× " !important;
+  color: #dc2626;
+  font-weight: bold;
+}
+
+.ap-quiz .ap-reveal[open] ~ .ap-choices .ap-choice-note {
+  display: block !important;
+}
+
+.ap-quiz .ap-reveal[open] ~ .ap-choices .ap-mistake {
+  text-decoration: underline !important;
+  text-decoration-color: #dc2626;
+  text-underline-offset: 2px;
+}
+
+.ap-quiz .ap-choice-item {
+  margin: 0.5em 0;
+}
+
+.ap-quiz .ap-choice-note {
+  margin: 0.2em 0 0 1.1em;
+  font-size: 0.88em;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.ap-quiz .ap-explanation h4 {
+  margin: 0 0 0.5em;
+  font-size: 1em;
+}
