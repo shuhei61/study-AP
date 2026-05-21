@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "問題/午前/R3春期/1.md",
+                "file": "問題/午前/R3春期/38.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "1"
+              "title": "38"
             }
           }
         ],
@@ -109,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "問題/午前/R3春期/1.md",
+                "file": "問題/午前/R3春期/38.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -119,7 +119,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "1へのバックリンク"
+              "title": "38へのバックリンク"
             }
           },
           {
@@ -128,12 +128,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "問題/午前/R3春期/1.md",
+                "file": "問題/午前/R3春期/38.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "1からのアウトゴーイングリンク"
+              "title": "38からのアウトゴーイングリンク"
             }
           },
           {
@@ -171,13 +171,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "問題/午前/R3春期/1.md",
+                "file": "問題/午前/R3春期/38.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "1のアウトライン"
+              "title": "38のアウトライン"
             }
           }
         ]
@@ -200,10 +200,10 @@
   },
   "active": "4dd4b521121fca5b",
   "lastOpenFiles": [
+    "問題/午前/R3春期/1.md",
     "タグ一覧.md",
     "scripts/build_tag_index.py",
     "問題/午前/R3春期/38.md",
-    "問題/午前/R3春期/1.md",
     "docs/ai/スクリプト.md",
     "docs/ai/共通.md",
     "docs/ai/用語ページ.md",
