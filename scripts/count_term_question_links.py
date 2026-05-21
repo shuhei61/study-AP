@@ -15,69 +15,21 @@
 from __future__ import annotations
 
 import argparse
-import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 
-QUESTIONS_DIR_NAME = "問題"
-GLOSSARY_FILENAME = "用語一覧.md"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from glossary_lib import (
+    GLOSSARY_FILENAME,
+    GLOSSARY_LINE_RE,
+    QUESTIONS_DIR_NAME,
+    iter_question_notes,
+    question_label,
+    scan_questions_term_to_questions,
+)
+
 QUESTION_TAG = "#問題"
-
-# 問題ノート → 用語（HTML）
-TERM_LINK_RE = re.compile(
-    r'(?:href|data-href)="用語/([^"]+)"',
-    re.MULTILINE,
-)
-
-# _用語一覧.md の行: - [[用語名]] または - [[用語名]]（3）
-GLOSSARY_LINE_RE = re.compile(
-    r"^(- \[\[)(.+?)(\]\])(?:（\d+）)?\s*$",
-)
-
-
-def is_excluded_question_path(path: Path, questions_dir: Path) -> bool:
-    """テンプレート・下書きを集計から除外。"""
-    if path.name.startswith("_"):
-        return True
-    rel_parts = path.relative_to(questions_dir).parts
-    return any(part.startswith("_") for part in rel_parts)
-
-
-def iter_question_notes(questions_dir: Path):
-    """問題/ 配下の .md（_サンプル 等は除く）。"""
-    for path in sorted(questions_dir.rglob("*.md")):
-        if is_excluded_question_path(path, questions_dir):
-            continue
-        yield path
-
-
-def question_label(path: Path, questions_dir: Path) -> str:
-    """問題ノートの識別子（サブフォルダ時は 令和3年/午前 問38 形式）。"""
-    return str(path.relative_to(questions_dir).with_suffix(""))
-
-
-def scan_questions(questions_dir: Path) -> dict[str, set[str]]:
-    """用語名 → リンク元になっている問題ノート識別子の集合。"""
-    counts: dict[str, set[str]] = defaultdict(set)
-    skipped: list[str] = []
-
-    for path in iter_question_notes(questions_dir):
-        text = path.read_text(encoding="utf-8")
-        if QUESTION_TAG not in text:
-            skipped.append(question_label(path, questions_dir))
-            continue
-        qid = question_label(path, questions_dir)
-        for term in TERM_LINK_RE.findall(text):
-            counts[term].add(qid)
-
-    if skipped:
-        print(
-            f"スキップ（{QUESTION_TAG} なし）: {', '.join(skipped)}",
-            file=sys.stderr,
-        )
-
-    return dict(counts)
 
 
 def update_glossary_index(glossary_path: Path, counts: dict[str, set[str]]) -> tuple[int, int]:
@@ -137,7 +89,7 @@ def main() -> None:
     if not glossary_path.is_file():
         raise SystemExit(f"用語一覧がありません: {glossary_path}")
 
-    counts = scan_questions(questions_dir)
+    counts = scan_questions_term_to_questions(questions_dir)
     print_report(counts, questions_dir)
 
     if args.dry_run:

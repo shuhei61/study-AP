@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "用語一覧.md",
+                "file": "問題/午前/R3春期/問38.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "用語一覧"
+              "title": "問38"
             }
           }
         ],
@@ -109,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "用語一覧.md",
+                "file": "問題/午前/R3春期/問38.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -119,7 +119,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "用語一覧へのバックリンク"
+              "title": "問38へのバックリンク"
             }
           },
           {
@@ -128,12 +128,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "用語一覧.md",
+                "file": "問題/午前/R3春期/問38.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "用語一覧からのアウトゴーイングリンク"
+              "title": "問38からのアウトゴーイングリンク"
             }
           },
           {
@@ -171,13 +171,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "用語一覧.md",
+                "file": "問題/午前/R3春期/問38.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "用語一覧のアウトライン"
+              "title": "問38のアウトライン"
             }
           }
         ]
@@ -200,8 +200,10 @@
   },
   "active": "4dd4b521121fca5b",
   "lastOpenFiles": [
-    "問題/午前/R3春期/問38.md",
     "用語一覧.md",
+    "scripts/check_question_terms.py",
+    "scripts/glossary_lib.py",
+    "問題/午前/R3春期/問38.md",
     "README.md",
     "テンプレート/過去問ノート.md",
     "テンプレート/用語ノート.md",
@@ -218,9 +220,7 @@
     "scripts/count_term_question_links.py",
     "用語/脆弱性.md",
     "scripts/build_glossary_index.py",
-    "scripts",
     "サンプル.md",
-    "セキュリティ.md",
-    "用語"
+    "セキュリティ.md"
   ]
 }
