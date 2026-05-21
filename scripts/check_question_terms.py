@@ -38,15 +38,17 @@ from glossary_lib import (
     apply_question_internal_links,
     apply_term_wiki_links,
     parse_apply_terms_arg,
-    extract_term_links,
+    extract_question_term_links,
+    extract_question_term_links_in_forbidden_regions,
     extract_term_wiki_links,
     load_glossary_terms,
+    question_linkable_html,
     normalize_question_ref,
     normalize_term_ref,
     question_note_path,
     scan_questions_by_file,
     scan_terms_by_file,
-    suggest_glossary_terms_in_text,
+    suggest_glossary_terms_in_html,
     suggest_terms_for_term_note,
     term_note_path,
 )
@@ -171,7 +173,31 @@ def read_term(terms_dir: Path, vault_root: Path, term_ref: str) -> tuple[Path, s
     return path, tid, text
 
 
-def finish_check(issues: list[tuple[str, list[str]]]) -> None:
+def print_misplaced_question_links(display_path: str, misplaced: list[str]) -> None:
+    if not misplaced:
+        return
+    print("## 要対応（解説外の用語リンク）\n")
+    print(f"対象: {display_path}\n")
+    print(
+        "  問題文（`ap-question`）または選択肢本文（`ap-choice-text`）に "
+        "internal-link があります:\n"
+    )
+    for t in misplaced:
+        print(f"  - {t}")
+    print()
+
+
+def finish_check(
+    issues: list[tuple[str, list[str]]],
+    *,
+    misplaced_question_terms: list[str] | None = None,
+) -> None:
+    if misplaced_question_terms:
+        print(
+            "結果: 問題文・選択肢本文に用語リンク "
+            f"{len(misplaced_question_terms)} 語 — 削除するか ap-choice-note / ap-explanation へ移す"
+        )
+        sys.exit(1)
     if issues:
         n = sum(len(b) for _, b in issues)
         print(f"結果: 一覧にない語へのリンク {n} 語 — リンクを直して再実行")
@@ -307,8 +333,14 @@ def main() -> None:
 
     if args.suggest:
         _, qid, text = read_question(questions_dir, root, args.question)
-        candidates = suggest_glossary_terms_in_text(text, glossary_terms)
-        linked = extract_term_links(text)
+        linkable = question_linkable_html(text)
+        if not linkable.strip():
+            raise SystemExit(
+                f"ap-choice-note または ap-explanation がありません: "
+                f"{QUESTIONS_DIR_NAME}/{qid}.md"
+            )
+        candidates = suggest_glossary_terms_in_html(linkable, glossary_terms)
+        linked = extract_question_term_links(text)
         print_suggest_report(
             note_path=f"{QUESTIONS_DIR_NAME}/{qid}.md",
             candidates=candidates,
@@ -340,29 +372,32 @@ def main() -> None:
         sys.exit(0)
 
     display_qid = normalize_question_ref(args.question, questions_dir, root)
+    display_path = f"{QUESTIONS_DIR_NAME}/{display_qid}.md"
+    _, _, text = read_question(questions_dir, root, args.question)
+    misplaced = extract_question_term_links_in_forbidden_regions(text)
+    print_misplaced_question_links(display_path, misplaced)
+
     by_file, skipped = scan_questions_by_file(
         questions_dir, require_tag=True, question_filter=args.question
     )
     if not by_file:
-        try:
-            read_question(questions_dir, root, args.question)
-        except SystemExit:
-            raise
-        print(f"対象: {QUESTIONS_DIR_NAME}/{display_qid}.md（リンク照合）\n")
+        if misplaced:
+            finish_check([], misplaced_question_terms=misplaced)
+        print(f"対象: {display_path}（リンク照合）\n")
         print("用語リンクがまだありません。先に --suggest で候補を確認してください。")
         sys.exit(1)
 
     issues, ok = check_glossary(glossary_terms, by_file)
     print_check_report(
         kind=QUESTION_TAG,
-        display_path=f"{QUESTIONS_DIR_NAME}/{display_qid}.md",
+        display_path=display_path,
         issues=issues,
         ok=ok,
         skipped=skipped,
         all_label=QUESTIONS_DIR_NAME,
         empty_msg="用語リンク付きの問題ノートはありません。",
     )
-    finish_check(issues)
+    finish_check(issues, misplaced_question_terms=misplaced)
 
 
 if __name__ == "__main__":

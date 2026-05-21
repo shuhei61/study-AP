@@ -125,7 +125,7 @@ def build_markdown(categories: list[tuple[int, str, list[tuple[str, list[str]]]]
         "- 未作成のもの → 未解決リンク（学習中に `用語/用語名.md` を追加）",
         "- **問題・解説**で用語が出てきたとき、一覧に載っていればユーザーが `用語/用語名.md` を追加（AI は明示依頼時のみ作成）",
         "- `（N）` は **問題ページ**からその用語へのリンク数（`#問題` ノートのみ。用語ページの出典は含まない）",
-        "- 再生成: `python3 scripts/build_glossary_index.py` → `python3 scripts/count_term_question_links.py`",
+        "- 再生成（ユーザー操作）: `build_glossary_index.py` → 必要なら `build_tag_index.py` → `count_term_question_links.py`（AI はいずれも明示依頼時以外は実行しない）",
         "",
         "---",
         "",

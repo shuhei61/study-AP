@@ -25,6 +25,21 @@ GLOSSARY_LINE_RE = re.compile(
     r"^(- \[\[)(.+?)(\]\])(?:（\d+）)?\s*$",
 )
 
+QUESTION_EXPLANATION_RE = re.compile(
+    r'(<div\s+class="ap-explanation"[^>]*>)(.*?)(</div>)',
+    re.DOTALL | re.IGNORECASE,
+)
+QUESTION_CHOICE_NOTE_RE = re.compile(
+    r'(<div\s+class="ap-choice-note"[^>]*>)(.*?)(</div>)',
+    re.DOTALL | re.IGNORECASE,
+)
+# 用語リンク禁止: 問題文・選択肢本文（ap-choice-note は可）
+QUESTION_FORBIDDEN_LINK_RE = re.compile(
+    r'<p\s+class="ap-question"[^>]*>.*?</p>'
+    r'|<div\s+class="ap-choice-text"[^>]*>.*?</div>',
+    re.DOTALL | re.IGNORECASE,
+)
+
 
 def is_excluded_question_path(path: Path, questions_dir: Path) -> bool:
     if path.name.startswith("_"):
@@ -52,9 +67,9 @@ def normalize_question_ref(
     """問題ノート参照を 問題/ 配下の相対ID（スラッシュ区切り・拡張子なし）に正規化。
 
     受け付ける例:
-      問題/午前/R3春期/問38
-      問題/午前/R3春期/問38.md
-      午前/R3春期/問38  （従来形式・問題/ 省略可）
+      問題/午前/R3春期/38
+      問題/午前/R3春期/38.md
+      午前/R3春期/38  （問題/ 省略可）
     """
     raw = ref.strip().strip('"').strip("'")
     if not raw:
@@ -78,7 +93,7 @@ def normalize_question_ref(
     except ValueError as e:
         raise SystemExit(
             f"問題ノートのパスを解決できません: {ref}\n"
-            f"  例: 問題/午前/R3春期/問38  または  午前/R3春期/問38"
+            f"  例: 問題/午前/R3春期/38  または  午前/R3春期/38"
         ) from e
 
     return rel.with_suffix("").as_posix()
@@ -114,6 +129,40 @@ def extract_term_links(text: str) -> list[str]:
     return ordered
 
 
+def iter_question_linkable_spans(text: str) -> list[tuple[int, int, str]]:
+    """リンク可: ap-choice-note と ap-explanation の (開始, 終了, ブロックHTML)。"""
+    spans: list[tuple[int, int, str]] = []
+    for m in QUESTION_CHOICE_NOTE_RE.finditer(text):
+        spans.append((m.start(), m.end(), m.group(0)))
+    m = QUESTION_EXPLANATION_RE.search(text)
+    if m:
+        spans.append((m.start(), m.end(), m.group(0)))
+    spans.sort(key=lambda x: x[0])
+    return spans
+
+
+def question_linkable_html(text: str) -> str:
+    """リンク・候補抽出の対象 HTML（choice-note + explanation）。"""
+    return "".join(block for _, _, block in iter_question_linkable_spans(text))
+
+
+def extract_question_term_links(text: str) -> list[str]:
+    """過去問のリンク可領域（ap-choice-note・ap-explanation）内の internal-link。"""
+    return extract_term_links(question_linkable_html(text))
+
+
+def extract_question_term_links_in_forbidden_regions(text: str) -> list[str]:
+    """問題文・選択肢本文（ap-question / ap-choice-text）内の internal-link。"""
+    forbidden = "".join(m.group(0) for m in QUESTION_FORBIDDEN_LINK_RE.finditer(text))
+    return extract_term_links(forbidden)
+
+
+# 後方互換の別名
+extract_question_term_links_outside_explanation = (
+    extract_question_term_links_in_forbidden_regions
+)
+
+
 def scan_questions_by_file(
     questions_dir: Path,
     *,
@@ -138,11 +187,15 @@ def scan_questions_by_file(
         if require_tag and QUESTION_TAG not in text:
             skipped.append(qid)
             continue
-        terms = extract_term_links(text)
+        terms = extract_question_term_links(text)
         if terms:
             by_file[qid] = terms
 
     return by_file, skipped
+
+
+def _plain_text_from_html(html: str) -> str:
+    return re.sub(r"<[^>]+>", "", html)
 
 
 def _term_appears_in_text(term: str, text: str) -> bool:
@@ -156,6 +209,31 @@ def _term_appears_in_text(term: str, text: str) -> bool:
         pat = r"(?<![A-Za-z0-9])" + re.escape(term) + r"(?![A-Za-z0-9])"
         return bool(re.search(pat, text))
     return term in text
+
+
+def _term_appears_for_linking(
+    html: str,
+    term: str,
+    pool: set[str] | list[str],
+) -> bool:
+    """HTML 本文で用語として出現するか（より長い一覧語の部分列は除外）。"""
+    plain = _plain_text_from_html(html)
+    masked = plain
+    for long in sorted((t for t in pool if t != term and term in t), key=len, reverse=True):
+        masked = masked.replace(long, " " * len(long))
+    return _term_appears_in_text(term, masked)
+
+
+def suggest_glossary_terms_in_html(
+    html: str,
+    glossary_terms: set[str],
+) -> list[str]:
+    """HTML 断片に出現する用語一覧の語を、長い語優先・部分語除外で列挙。"""
+    found: list[str] = []
+    for term in sorted(glossary_terms, key=len, reverse=True):
+        if _term_appears_for_linking(html, term, glossary_terms):
+            found.append(term)
+    return found
 
 
 def suggest_glossary_terms_in_text(text: str, glossary_terms: set[str]) -> list[str]:
@@ -184,19 +262,14 @@ def _replace_plain_occurrences(segment: str, term: str, replacement: str) -> str
 
 
 def _replace_in_outside_tags(text: str, term: str, replacement: str) -> str:
-    """HTML タグの外側のテキストだけ置換（既存 <a> 内は触らない）。"""
-    if f'data-href="用語/{term}"' in text:
-        chunks = re.split(r"(<a\s[^>]*>.*?</a>)", text, flags=re.DOTALL | re.IGNORECASE)
-        out: list[str] = []
-        for i, chunk in enumerate(chunks):
-            if i % 2 == 0:
-                chunk = _replace_plain_occurrences(chunk, term, replacement)
-            out.append(chunk)
-        return "".join(out)
-    parts = re.split(r"(<[^>]+>)", text)
-    for i in range(0, len(parts), 2):
-        parts[i] = _replace_plain_occurrences(parts[i], term, replacement)
-    return "".join(parts)
+    """HTML タグの外側のテキストだけ置換（既存 <a>…</a> 内は触らない）。"""
+    chunks = re.split(r"(<a\s[^>]*>.*?</a>)", text, flags=re.DOTALL | re.IGNORECASE)
+    out: list[str] = []
+    for i, chunk in enumerate(chunks):
+        if i % 2 == 0:
+            chunk = _replace_plain_occurrences(chunk, term, replacement)
+        out.append(chunk)
+    return "".join(out)
 
 
 def parse_apply_terms_arg(chunks: list[str], glossary_terms: set[str]) -> list[str]:
@@ -217,37 +290,73 @@ def parse_apply_terms_arg(chunks: list[str], glossary_terms: set[str]) -> list[s
     return out
 
 
-def apply_question_internal_links(
-    text: str,
+def _apply_internal_links_to_html_segment(
+    segment: str,
     glossary_terms: set[str],
-    only_terms: list[str] | None = None,
+    only_terms: list[str] | None,
 ) -> tuple[str, list[str], list[str]]:
-    """未リンクの語に internal-link を付与。
-
-    only_terms 指定時はその語だけ（本文に出現・未リンクのもの）。
-    戻り値: (新テキスト, 付与した語, スキップした語)
-    """
-    linked = set(extract_term_links(text))
+    """HTML 断片に internal-link を付与（長い語優先）。"""
+    linked = set(extract_term_links(segment))
+    search_pool = glossary_terms
     if only_terms is not None:
         pool = only_terms
     else:
-        pool = suggest_glossary_terms_in_text(text, glossary_terms)
+        pool = suggest_glossary_terms_in_html(segment, glossary_terms)
     to_apply: list[str] = []
     skipped: list[str] = []
     for t in pool:
         if t in linked:
             skipped.append(t)
             continue
-        if not _term_appears_in_text(t, text):
+        if not _term_appears_for_linking(segment, t, search_pool):
             skipped.append(t)
             continue
         to_apply.append(t)
     if not to_apply:
-        return text, [], skipped
-    out = text
+        return segment, [], skipped
+    out = segment
     for term in sorted(to_apply, key=len, reverse=True):
         out = _replace_in_outside_tags(out, term, internal_link_html(term))
     return out, to_apply, skipped
+
+
+def apply_question_internal_links(
+    text: str,
+    glossary_terms: set[str],
+    only_terms: list[str] | None = None,
+) -> tuple[str, list[str], list[str]]:
+    """未リンクの語に internal-link を付与（`ap-choice-note`・`ap-explanation` 内のみ）。
+
+    only_terms 指定時はその語だけ（リンク可領域に出現・未リンクのもの）。
+    戻り値: (新テキスト, 付与した語, スキップした語)
+    """
+    spans = iter_question_linkable_spans(text)
+    if not spans:
+        return text, [], ["ap-choice-note または ap-explanation がありません"]
+
+    applied_all: list[str] = []
+    skipped_all: list[str] = []
+    seen_applied: set[str] = set()
+    seen_skipped: set[str] = set()
+    out: list[str] = []
+    pos = 0
+    for start, end, block in spans:
+        out.append(text[pos:start])
+        new_block, applied, skipped = _apply_internal_links_to_html_segment(
+            block, glossary_terms, only_terms
+        )
+        out.append(new_block)
+        for t in applied:
+            if t not in seen_applied:
+                seen_applied.add(t)
+                applied_all.append(t)
+        for t in skipped:
+            if t not in seen_skipped:
+                seen_skipped.add(t)
+                skipped_all.append(t)
+        pos = end
+    out.append(text[pos:])
+    return "".join(out), applied_all, skipped_all
 
 
 def apply_term_wiki_links(
@@ -409,7 +518,7 @@ def suggest_terms_for_term_note(
 
 
 def scan_questions_term_to_questions(questions_dir: Path) -> dict[str, set[str]]:
-    """用語名 → リンク元問題の集合（#問題 タグ必須）。"""
+    """用語名 → リンク元問題の集合（#問題 タグ・ap-explanation 内リンクのみ）。"""
     counts: dict[str, set[str]] = defaultdict(set)
     by_file, _ = scan_questions_by_file(questions_dir, require_tag=True)
     for qid, terms in by_file.items():
