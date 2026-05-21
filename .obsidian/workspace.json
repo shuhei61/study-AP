@@ -200,6 +200,12 @@
   },
   "active": "4dd4b521121fca5b",
   "lastOpenFiles": [
+    "docs/ai/スクリプト.md",
+    "docs/ai/共通.md",
+    "docs/ai/用語ページ.md",
+    "docs/ai/過去問ノート.md",
+    "docs/ai",
+    "docs",
     "用語一覧.md",
     "scripts/check_question_terms.py",
     "scripts/glossary_lib.py",
@@ -217,9 +223,7 @@
     "用語/フットプリンティング.md",
     "用語/ルートキット.md",
     "scripts/run_count_term_links.sh",
-    "scripts/count_term_question_links.py",
     "用語/脆弱性.md",
-    "scripts/build_glossary_index.py",
     "サンプル.md",
     "セキュリティ.md"
   ]

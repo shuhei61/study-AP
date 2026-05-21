@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """ap-siken 用語集から 用語一覧.md を生成する（シラバス 7.2 / 全23分野）。
 
+AI: ユーザーが一覧の再生成を明示依頼したとき以外は実行しない（README 共通ルール参照）。
+
   python3 scripts/build_glossary_index.py
   python3 scripts/build_glossary_index.py --only 1,11   # 特定分野のみ
 
