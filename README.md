@@ -132,10 +132,11 @@
 
 ## 用語一覧の再生成
 
-セキュリティ499語など、スクショ／公式リストから索引を更新するとき:
+[ap-siken 用語集](https://www.ap-siken.com/keyword/) から全23分野を取得して索引を更新するとき（スクショ不要）:
 
 ```bash
 python3 scripts/build_glossary_index.py
+# 特定分野のみ: python3 scripts/build_glossary_index.py --only 1,11
 ```
 
 索引を作り直したあと、過去問との結びつき件数を付け直す（**ボルトルート**で実行）:
