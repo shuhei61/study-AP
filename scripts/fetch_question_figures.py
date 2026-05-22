@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ap-siken から過去問ノート用の図を取得し、assets/ に保存して HTML に埋め込む。
 
-使い方（ボルトルート）:
+使い方:
   python3 scripts/fetch_question_figures.py --question 問題/午前/R3春期/14.md
   python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md
   python3 scripts/fetch_question_figures.py --apply --dry-run --question 問題/午前/R3春期/16.md

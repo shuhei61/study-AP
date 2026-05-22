@@ -37,10 +37,10 @@
 
 ### スクリプト実行
 
-- **Cursor のワークスペース＝このボルト**。`cd`・絶対パス・`&&` でコマンドをつなげない
-- 形式: `python3 scripts/<名前>.py …`（**1コマンド1行**。例: `python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md`）
+- 形式: `python3 scripts/<名前>.py …`（**1コマンド1行**。`cd`・`&&` でつなげない）
+- 例: `python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md`
 - ap-siken の本文取得は **WebFetch 等のみ**。`fetch_question_figures.fetch_html` をワーカーが import して HTML をパースしない
-- 一覧・allowlist: [`docs/ai/スクリプト.md`](docs/ai/スクリプト.md)
+- allowlist: [`docs/ai/スクリプト.md`](docs/ai/スクリプト.md) / [`.cursor/rules/scripts-cli.mdc`](.cursor/rules/scripts-cli.mdc)
 
 ### 作業中
 
@@ -53,12 +53,6 @@
 - **リンク**: `[[ページ名]]` または `[[用語/ページ名]]` / `[[問題/…/番号]]`
 - **ファイル名**: リンク先と一致（例: `[[フットプリンティング]]` → `用語/フットプリンティング.md`）
 - **過去問**: 見出し・HTML の「問38」表記は試験どおり。ファイル名・出典の wiki は番号のみ（`38.md` / `[[38]]` または `[[問題/午前/R3春期/38]]`）
-
-### ボルトルート（人間向け・パス参照）
-
-`~/obsidian/応用情報/` — AI がシェルにこのパスや `cd` を書く必要はない（ワークスペースで足りる）
-
----
 
 ## プレイブック（依頼時に追加で読む）
 

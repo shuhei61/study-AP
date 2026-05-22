@@ -45,7 +45,7 @@
 
 ### 2.5. 図（毎回）
 
-**シェルはコマンド1行だけ**（ワークスペースは既にこのボルト。`cd`・絶対パス・`&&` 連結は使わない）。
+**次の1行だけをそのまま実行**（`cd`・`&&` でつなげない）。
 
 ```bash
 python3 scripts/fetch_question_figures.py --apply --question {{QUESTION_PATH}}
@@ -73,7 +73,7 @@ python3 scripts/check_question_terms.py --question {{QUESTION_PATH}}
 
 ### 実行しないこと
 
-- **`cd`・絶対パス・`&&` でのコマンド連結**（例: `cd … && python3 … && python3 …`）。各スクリプトは上記どおり **1行ずつ** `python3 scripts/…` のみ
+- **`cd`・`&&` でのコマンド連結**（例: `cd … && python3 …`）。各スクリプトは **1行ずつ** `python3 scripts/…` のみ
 - ap-siken の **手動シェル HTTP 取得**（`curl` / `wget` / `python3 -c` / `python3 <<'PY'` / `fetch_question_figures.fetch_html` の import など。本文は WebFetch のみ。**図・選択肢表は `fetch_question_figures.py --apply` のみ**）
 - `python3 scripts/count_term_question_links.py`（親オーケストレーターが全問完了後に1回実行）
 - `build_tag_index.py` / `build_glossary_index.py`
