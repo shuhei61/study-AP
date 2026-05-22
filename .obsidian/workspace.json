@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "問題/午前/R3春期/80.md",
-                "mode": "preview",
+                "file": "テンプレート/用語ノート.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "80"
+              "title": "用語ノート"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "問題/午前/R3春期/80.md",
+                "file": "テンプレート/用語ノート.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "80へのバックリンク"
+              "title": "用語ノートへのバックリンク"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "問題/午前/R3春期/80.md",
+                "file": "テンプレート/用語ノート.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "80からのアウトゴーイングリンク"
+              "title": "用語ノートからのアウトゴーイングリンク"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "問題/午前/R3春期/80.md",
+                "file": "テンプレート/用語ノート.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "80のアウトライン"
+              "title": "用語ノートのアウトライン"
             }
           }
         ]
@@ -185,6 +185,24 @@
   },
   "active": "4dd4b521121fca5b",
   "lastOpenFiles": [
+    "テンプレート/過去問ノート.md",
+    "用語/ドキュメント指向データベース.md",
+    "問題/午前/R3春期/28.md",
+    "用語/ハクティビズム.md",
+    "問題/午前/R3春期/38.md",
+    "問題/午前/R3春期/25.md",
+    "問題/午前/R3春期/1.md",
+    "用語一覧.md",
+    "問題/午前/R3春期/29.md",
+    "問題/午前/R3春期/3.md",
+    "問題/午前/R3春期/2.md",
+    "問題/午前/R3春期/22.md",
+    "問題/午前/R3春期/20.md",
+    "問題/午前/R3春期/18.md",
+    "問題/午前/R3春期/11.md",
+    "問題/午前/R3春期/80.md",
+    "docs/ai/試験回とパス.md",
+    "問題/午前/R3秋期",
     "問題/午前/R3春期/79.md",
     "問題/午前/R3春期/78.md",
     "問題/午前/R3春期/77.md",
@@ -198,29 +216,13 @@
     "assets/問題/午前/R3春期/76",
     "assets/問題/午前/R3春期/75/75.png",
     "assets/問題/午前/R3春期/75",
-    "問題/午前/R3春期/80.md",
-    "問題/午前/R3春期/68.md",
     "assets/問題/午前/R3春期/72/72.png",
     "assets/問題/午前/R3春期/72",
     "assets/問題/午前/R3春期/71/71.png",
     "assets/問題/午前/R3春期/71",
-    "問題/午前/R3春期/67.md",
-    "問題/午前/R3春期/62.md",
-    "問題/午前/R3春期/61.md",
-    "問題/午前/R3春期/63.md",
-    "問題/午前/R3春期/60.md",
-    "問題/午前/R3春期/59.md",
-    "問題/午前/R3春期/57.md",
-    "問題/午前/R3春期/58.md",
-    "問題/午前/R3春期/56.md",
-    "問題/午前/R3春期/55.md",
-    "問題/午前/R3春期/54.md",
-    "問題/午前/R3春期/70.md",
-    "問題/午前/R3春期/69.md",
     "assets/問題/午前/R3春期/67/67a.png",
     "assets/問題/午前/R3春期/67/67.png",
     "assets/問題/午前/R3春期/67",
-    "問題/午前/R3春期/64.md",
     "assets/問題/午前/R3春期/61/61.png",
     "assets/問題/午前/R3春期/61",
     "assets/問題/午前/R3春期/62/62.png",
@@ -228,7 +230,6 @@
     "assets/問題/午前/R3春期/56/56.png",
     "assets/問題/午前/R3春期/56",
     "assets/問題/午前/R3春期/52/52.png",
-    "assets/問題/午前/R3春期/52",
-    "assets/問題/午前/R3春期/54"
+    "assets/問題/午前/R3春期/52"
   ]
 }

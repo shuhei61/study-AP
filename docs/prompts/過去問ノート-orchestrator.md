@@ -24,10 +24,12 @@
 
 | 項目 | 例 |
 |------|-----|
-| 試験区分・回 | `午前` / `R3春期` |
+| 試験区分・回 | `午前` / `R3春期` または `R3秋期` など |
 | 問番号 | `7` または `7〜10` |
-| ap-siken URL 規則 | `https://www.ap-siken.com/kakomon/03_haru/q{N}.html`（回・年度は依頼に合わせる） |
-| 保存パス | `問題/午前/R3春期/{N}.md`（ファイル名に `問` は付けない） |
+| ap-siken URL 規則 | `https://www.ap-siken.com/kakomon/{スラッグ}/q{N}.html`（例: 春 `03_haru`、秋 `03_aki`） |
+| 保存パス | `問題/午前/{試験回}/{N}.md`（ファイル名に `問` は付けない） |
+
+試験回とスラッグの対応表: [`docs/ai/試験回とパス.md`](../ai/試験回とパス.md)
 
 ## オーケストレーターの手順
 
@@ -98,6 +100,8 @@ python3 scripts/count_term_question_links.py
 
 ## プレースホルダ早見（ワーカー起動用）
 
+春期（R3）の例:
+
 | プレースホルダ | 例 |
 |----------------|-----|
 | `{{EXAM_LABEL}}` | 令和3年春期 |
@@ -106,3 +110,5 @@ python3 scripts/count_term_question_links.py
 | `{{QUESTION_NUM}}` | 7 |
 | `{{QUESTION_PATH}}` | 問題/午前/R3春期/7.md |
 | `{{AP_SIKEN_URL}}` | https://www.ap-siken.com/kakomon/03_haru/q7.html |
+
+秋期（R3）の例: `{{TERM_DIR}}`＝`R3秋期`、`{{AP_SIKEN_URL}}`＝`…/03_aki/q{N}.html` — 全表は [`試験回とパス.md`](../ai/試験回とパス.md)
