@@ -36,8 +36,9 @@
 
 ### スクリプト実行
 
-- **作業ディレクトリはボルトルート**（下記パス）。**`cd` は不要**
+- **作業ディレクトリはボルトルート**（下記パス）。**`cd` は不要**（`cd "/Users/…/応用情報" &&` で前置きしない）
 - 形式: `python3 scripts/<名前>.py …`（例: `python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md`）
+- ap-siken の本文取得は **WebFetch 等のみ**。`fetch_question_figures.fetch_html` をワーカーが import して HTML をパースしない
 - 一覧・allowlist: [`docs/ai/スクリプト.md`](docs/ai/スクリプト.md)
 
 ### 作業中

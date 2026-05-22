@@ -90,7 +90,7 @@ class Figure:
         self.filename = filename
         self.width = width
         self.height = height
-        self.slot = slot  # question | choice | explanation
+        self.slot = slot  # question | choice | choice_table | explanation
         self.kana = kana
 
 
@@ -225,6 +225,36 @@ def collect_figures(html: str, page_url: str, unpadded: str, padded: str) -> lis
         )
         if span and IMG_TAG_RE.search(span.group(1)):
             add_from_block(span.group(1), "choice", kana)
+    # selectList: 4肢が1枚の表画像（例: 29a.png）のみで HTML テキストが無い問題
+    # （choice_block は ansbg+selectList の slice 成功時のみ非空）
+    if choice_block:
+        for tag in IMG_TAG_RE.findall(choice_block):
+            parsed = parse_img_tag(tag)
+            if not parsed:
+                continue
+            src, width, height = parsed
+            full = normalize_img_src(src, page_url)
+            fname = figure_filename(src)
+            if not fname or fname in seen:
+                continue
+            if not matches_question_image(fname, unpadded, padded):
+                continue
+            if not re.fullmatch(
+                rf"{re.escape(unpadded)}a\.(?:png|gif|jpe?g)$",
+                fname,
+                re.IGNORECASE,
+            ):
+                continue
+            seen.add(fname)
+            figures.append(
+                Figure(
+                    src_path=full,
+                    filename=fname,
+                    width=width,
+                    height=height,
+                    slot="choice_table",
+                )
+            )
     add_from_block(kaisetsu, "explanation")
     return figures
 
@@ -316,6 +346,31 @@ def inject_choices(body: str, by_kana: dict[str, Figure], rel_by_file: dict[str,
     return AP_CHOICE_TEXT_RE.sub(repl, body)
 
 
+def inject_choice_table(body: str, imgs: list[Figure], rel_by_file: dict[str, str]) -> str:
+    """選択肢表を ap-question 末尾（問題図の直後）に挿入。"""
+    if not imgs:
+        return body
+
+    def repl(m: re.Match[str]) -> str:
+        inner = m.group(2)
+        if any(has_fig_for_file(inner, f.filename) for f in imgs):
+            return m.group(1) + inner + m.group(3)
+        tags = []
+        for fig in imgs:
+            tags.append(
+                build_img_tag(
+                    rel_by_file[fig.filename],
+                    "選択肢の組合せ表",
+                    fig.width,
+                    fig.height,
+                )
+            )
+        block = "<br>" + "".join(tags)
+        return m.group(1) + inner.rstrip() + block + m.group(3)
+
+    return AP_QUESTION_RE.sub(repl, body, count=1)
+
+
 def inject_explanation(body: str, imgs: list[Figure], rel_by_file: dict[str, str]) -> str:
     if not imgs:
         return body
@@ -377,10 +432,12 @@ def patch_note(text: str, figures: list[Figure], rel_by_file: dict[str, str]) ->
     body = m.group(2)
     q_imgs = [f for f in figures if f.slot == "question"]
     c_imgs = {f.kana: f for f in figures if f.slot == "choice" and f.kana}
+    t_imgs = [f for f in figures if f.slot == "choice_table"]
     e_imgs = [f for f in figures if f.slot == "explanation"]
 
     body = inject_question(body, q_imgs, rel_by_file)
     body = inject_choices(body, c_imgs, rel_by_file)
+    body = inject_choice_table(body, t_imgs, rel_by_file)
     body = inject_explanation(body, e_imgs, rel_by_file)
 
     return text[: m.start(2)] + body + text[m.end(2) :]
@@ -404,7 +461,12 @@ def print_report(
         return
     print("## 検出した図\n")
     for f in figures:
-        where = {"question": "問題文", "choice": f"選択肢{f.kana}", "explanation": "解説"}[f.slot]
+        where = {
+            "question": "問題文",
+            "choice": f"選択肢{f.kana}",
+            "choice_table": "選択肢表（4肢まとめ）",
+            "explanation": "解説",
+        }[f.slot]
         print(f"  - {f.filename} → {where} ({assets_rel}/{f.filename})")
     print()
     if downloaded:

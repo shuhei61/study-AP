@@ -92,7 +92,8 @@ python3 scripts/count_term_question_links.py
 ## 禁止・注意
 
 - 親がワーカーと同じファイルを同時に編集しない
-- ap-siken を **シェル HTTP で取得させない**（`curl` / `wget` / `urllib` / `requests` / HTML スクレイピング用 `python3 -c` 等。ワーカーは **WebFetch 等のみ**）
+- ap-siken を **シェル HTTP で取得させない**（`curl` / `wget` / `urllib` / `requests` / `python3 -c` / `python3 <<'PY'` / `fetch_question_figures.fetch_html` の import 等。ワーカーは **WebFetch 等のみ**）
+- スクリプト実行は **`python3 scripts/…` のみ**（`cd "/Users/…/応用情報" &&` の前置きを付けさせない）
 - HTML ブロック内に空行を入れない（ワーカー成果物を直すときも同様）
 - ユーザーの明示がない限り git commit しない
 

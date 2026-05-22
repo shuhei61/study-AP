@@ -26,7 +26,8 @@
 ### 0. 取得
 
 - `{{AP_SIKEN_URL}}` を **WebFetch 等**で開く（**1回で足りる。再取得のためシェル HTTP は使わない**）
-- **禁止（ap-siken 取得）:** `curl` / `wget` / `urllib.request` / `requests` 等による HTML 取得、HTML パース用の `python3 -c`、ネットワーク許可を伴うスクレイピング。図・表が画像だけでも **上記で代替しない**
+- **禁止（ap-siken 取得）:** `curl` / `wget` / `urllib.request` / `requests` 等による HTML 取得、HTML パース用の `python3 -c` / `python3 <<'PY'`、**`from fetch_question_figures import fetch_html` 等スクリプト経由の HTML パース**、ネットワーク許可を伴うスクレイピング。図・表が画像だけでも **上記で代替しない**
+- 選択肢が HTML テキストで取れない問題（ap-siken の `selectList`＋表画像のみ等）は、手順 2.5 で表を `ap-question` に埋め込み、`ap-choice-text` はア〜エのみ（シェルで HTML を再取得しない）
 - 図・表の数値が WebFetch に無いとき: 解説テキストに書いてある範囲だけ使う。それ以外は「元ページの図を参照」「要確認」と注記（**推測で表の数値を埋めない**）
 - 取得するもの: 問題文、分類、正解、解説、各選択肢の説明（あれば）
 - 画像のみの部分は「要確認」または元ページ参照の注記（推測で補う場合はその旨）
@@ -46,14 +47,15 @@
 
 ### 2.5. 図（ボルトルート・毎回）
 
-作業ディレクトリはボルトルート。**`cd` は不要。**
+作業ディレクトリはボルトルート。**`cd` は不要。** コマンドは次の1行だけ（`cd "/Users/…/応用情報" &&` などの前置きは付けない）。
 
 ```bash
 python3 scripts/fetch_question_figures.py --apply --question {{QUESTION_PATH}}
 ```
 
 - **図なし**と出たら次へ（curl 要否の判断は不要。スクリプトが自動判定）
-- 画像のみの選択肢は、ここで `ap-choice-text` に図が入る
+- レポートに **「選択肢表（4肢まとめ）」** が出たら、スクリプトが `ap-question` 末尾（問題図の直後）に表画像を埋め込む。各 `ap-choice-text` は **ア／イ／ウ／エ のラベルのみ**（a～d の組合せは表に任せ、テキストで重複させない）
+- 肢ごとに別画像の選択肢は、ここで `ap-choice-text` に図が入る
 
 ### 3〜6. 用語リンク（ボルトルート）
 
@@ -73,7 +75,8 @@ python3 scripts/check_question_terms.py --question {{QUESTION_PATH}}
 
 ### 実行しないこと
 
-- ap-siken の **手動シェル HTTP 取得**（`curl` / `wget` / HTML スクレイピング用 `python3 -c` など。本文は WebFetch のみ。**図は `fetch_question_figures.py` を実行**）
+- **`cd` でボルトルートに移動してからスクリプトを実行**（ルートは既にボルト。`python3 scripts/…` のみ）
+- ap-siken の **手動シェル HTTP 取得**（`curl` / `wget` / `python3 -c` / `python3 <<'PY'` / `fetch_question_figures.fetch_html` の import など。本文は WebFetch のみ。**図・選択肢表は `fetch_question_figures.py --apply` のみ**）
 - `python3 scripts/count_term_question_links.py`（親オーケストレーターが全問完了後に1回実行）
 - `build_tag_index.py` / `build_glossary_index.py`
 - `用語/○○.md` の新規作成
