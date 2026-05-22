@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "問題/午前/R3春期/38.md",
+                "file": "問題/午前/R3春期/1.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "38"
+              "title": "1"
             }
           }
         ],
@@ -68,7 +68,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#離散数学",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -89,7 +89,8 @@
               "title": "ブックマーク"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -109,7 +110,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "問題/午前/R3春期/38.md",
+                "file": "問題/午前/R3春期/1.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -119,7 +120,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "38へのバックリンク"
+              "title": "1へのバックリンク"
             }
           },
           {
@@ -128,12 +129,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "問題/午前/R3春期/38.md",
+                "file": "問題/午前/R3春期/1.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "38からのアウトゴーイングリンク"
+              "title": "1からのアウトゴーイングリンク"
             }
           },
           {
@@ -171,13 +172,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "問題/午前/R3春期/38.md",
+                "file": "問題/午前/R3春期/1.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "38のアウトライン"
+              "title": "1のアウトライン"
             }
           }
         ]
@@ -198,35 +199,53 @@
       "bases:新規ベースを作成": false
     }
   },
-  "active": "4dd4b521121fca5b",
+  "active": "673b14fd5b4e1a3f",
   "lastOpenFiles": [
+    "問題/午前/R3春期/38.md",
     "問題/午前/R3春期/1.md",
+    "問題/午前/R3春期/6.md",
+    "用語一覧.md",
+    "テンプレート/用語ノート.md",
+    "問題/午前/R3春期/5.md",
+    "問題/午前/R3春期/4.md",
+    "assets/問題/午前/R3春期/5/05_6.png",
+    "assets/問題/午前/R3春期/5/05_5.png",
+    "assets/問題/午前/R3春期/5/05_4.png",
+    "assets/問題/午前/R3春期/5/05_3.png",
+    "assets/問題/午前/R3春期/5/05_2.png",
+    "assets/問題/午前/R3春期/5/05_1.png",
+    "assets/問題/午前/R3春期/5/05.png",
+    "assets/問題/午前/R3春期/5",
+    "問題/午前/R3春期/3.md",
+    "問題/午前/R3春期/2.md",
+    "問題/午前/R3春期/14.md",
+    "scripts/fetch_question_figures.py",
+    "問題/午前/R3春期/15.md",
+    "assets/問題/午前/R3春期/14/14e.png",
+    "assets/問題/午前/R3春期/14/14u.png",
+    "assets/問題/午前/R3春期/14/14i.png",
+    "assets/問題/午前/R3春期/14",
+    "assets/問題/午前/R3春期",
+    "assets/問題/午前",
+    "assets/問題",
+    "assets",
+    "問題/午前/R3春期/16.md",
+    "問題/午前/R3春期/13.md",
+    "問題/午前/R3春期/12.md",
+    "問題/午前/R3春期/11.md",
+    "問題/午前/R3春期/10.md",
+    "問題/午前/R3春期/9.md",
+    "問題/午前/R3春期/8.md",
+    "問題/午前/R3春期/7.md",
+    "docs/prompts/過去問ノート-worker.md",
+    "docs/prompts/過去問ノート-orchestrator.md",
+    "docs/prompts/README.md",
+    "docs/prompts",
     "タグ一覧.md",
     "scripts/build_tag_index.py",
-    "問題/午前/R3春期/38.md",
     "docs/ai/スクリプト.md",
     "docs/ai/共通.md",
     "docs/ai/用語ページ.md",
-    "docs/ai/過去問ノート.md",
-    "docs/ai",
-    "docs",
-    "用語一覧.md",
-    "scripts/check_question_terms.py",
-    "scripts/glossary_lib.py",
-    "README.md",
-    "テンプレート/過去問ノート.md",
-    "テンプレート/用語ノート.md",
-    "テンプレート",
-    "問題/午前",
-    "問題/午前/R3春期/春",
-    "問題/午前/R3春期",
-    "問題/午前/_サンプル/令和3年春期 午前 問38.md",
-    "問題/午前/_サンプル",
-    "用語/ハクティビズム.md",
-    "用語/フットプリンティング.md",
-    "用語/ルートキット.md",
-    "用語/脆弱性.md",
-    "サンプル.md",
-    "セキュリティ.md"
+    "docs/ai"
   ]
 }
