@@ -13,8 +13,6 @@
 | 保存先 | `{{QUESTION_PATH}}` |
 | ap-siken | {{AP_SIKEN_URL}} |
 
-ボルトルート: `~/obsidian/応用情報/`
-
 ## 必読（作業前に読む）
 
 1. `README.md` の「共通ルール」
@@ -45,9 +43,9 @@
 - `ap-explanation` は ap-siken の解説に沿う（独自の言い換え・数値の追加はしない。図は「元ページでは図で示されています」等）
 - `ap-choice-note` は `docs/ai/過去問ノート.md` の A/B/C 基準で書く
 
-### 2.5. 図（ボルトルート・毎回）
+### 2.5. 図（毎回）
 
-作業ディレクトリはボルトルート。**`cd` は不要。** コマンドは次の1行だけ（`cd "/Users/…/応用情報" &&` などの前置きは付けない）。
+**シェルはコマンド1行だけ**（ワークスペースは既にこのボルト。`cd`・絶対パス・`&&` 連結は使わない）。
 
 ```bash
 python3 scripts/fetch_question_figures.py --apply --question {{QUESTION_PATH}}
@@ -57,7 +55,7 @@ python3 scripts/fetch_question_figures.py --apply --question {{QUESTION_PATH}}
 - レポートに **「選択肢表（4肢まとめ）」** が出たら、スクリプトが `ap-question` 末尾（問題図の直後）に表画像を埋め込む。各 `ap-choice-text` は **ア／イ／ウ／エ のラベルのみ**（a～d の組合せは表に任せ、テキストで重複させない）
 - 肢ごとに別画像の選択肢は、ここで `ap-choice-text` に図が入る
 
-### 3〜6. 用語リンク（ボルトルート）
+### 3〜6. 用語リンク
 
 ```bash
 python3 scripts/check_question_terms.py --suggest --question {{QUESTION_PATH}}
@@ -75,7 +73,7 @@ python3 scripts/check_question_terms.py --question {{QUESTION_PATH}}
 
 ### 実行しないこと
 
-- **`cd` でボルトルートに移動してからスクリプトを実行**（ルートは既にボルト。`python3 scripts/…` のみ）
+- **`cd`・絶対パス・`&&` でのコマンド連結**（例: `cd … && python3 … && python3 …`）。各スクリプトは上記どおり **1行ずつ** `python3 scripts/…` のみ
 - ap-siken の **手動シェル HTTP 取得**（`curl` / `wget` / `python3 -c` / `python3 <<'PY'` / `fetch_question_figures.fetch_html` の import など。本文は WebFetch のみ。**図・選択肢表は `fetch_question_figures.py --apply` のみ**）
 - `python3 scripts/count_term_question_links.py`（親オーケストレーターが全問完了後に1回実行）
 - `build_tag_index.py` / `build_glossary_index.py`

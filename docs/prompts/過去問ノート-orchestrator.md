@@ -4,7 +4,6 @@
 
 ## 前提
 
-- ボルトルート: `~/obsidian/応用情報/`
 - 手順の正本: `docs/ai/過去問ノート.md`（ワーカーにも同じルールを渡す）
 - ワーカー用プロンプト雛形: `docs/prompts/過去問ノート-worker.md`
 - サブエージェント種別: **`generalPurpose`**（`explore` は読み取り専用のため不可）
@@ -57,7 +56,7 @@
 
 ### 4. 完了後の検証（親）
 
-各問のパスに対し、**ボルトルートで**（`cd` 不要）:
+各問のパスに対し（**`cd`・絶対パス・`&&` 連結なし**。コマンドは1行ずつ）:
 
 ```bash
 python3 scripts/check_question_terms.py --question 問題/午前/R3春期/7.md
@@ -93,7 +92,7 @@ python3 scripts/count_term_question_links.py
 
 - 親がワーカーと同じファイルを同時に編集しない
 - ap-siken を **シェル HTTP で取得させない**（`curl` / `wget` / `urllib` / `requests` / `python3 -c` / `python3 <<'PY'` / `fetch_question_figures.fetch_html` の import 等。ワーカーは **WebFetch 等のみ**）
-- スクリプト実行は **`python3 scripts/…` のみ**（`cd "/Users/…/応用情報" &&` の前置きを付けさせない）
+- スクリプト実行は **`python3 scripts/…` の1行のみ**（`cd`・絶対パス・`&&` 連結を付けさせない）
 - HTML ブロック内に空行を入れない（ワーカー成果物を直すときも同様）
 - ユーザーの明示がない限り git commit しない
 
