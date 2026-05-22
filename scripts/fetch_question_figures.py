@@ -338,7 +338,10 @@ def inject_explanation(body: str, imgs: list[Figure], rel_by_file: dict[str, str
             return m.group(1) + inner + m.group(3)
 
         strong_idxs = [i for i, p in enumerate(paras) if "<strong>" in p.group(1)]
-        if len(strong_idxs) >= len(pending):
+        if len(pending) == 1 and not strong_idxs:
+            # 解説ブロック先頭の1枚（模式図など。ap-siken の kaisetsu 冒頭配置）
+            target_indices = [0]
+        elif len(strong_idxs) >= len(pending):
             target_indices = strong_idxs[: len(pending)]
         else:
             start = max(0, len(paras) - len(pending))

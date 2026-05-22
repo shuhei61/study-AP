@@ -15,7 +15,7 @@
 
 1. `README.md` を読む
 2. 本ファイル（`docs/prompts/過去問ノート-orchestrator.md`）
-3. 検証・集計のため `docs/ai/過去問ノート.md` の手順 6〜7（`count_term_question_links.py` は親が実行）
+3. 検証・集計のため `docs/ai/過去問ノート.md` の手順 2.5・6〜7（図はワーカーが `fetch_question_figures.py`。**`count_term_question_links.py` は親が実行**）
 
 読み終えてから、以下の手順に進む。
 
@@ -57,11 +57,13 @@
 
 ### 4. 完了後の検証（親）
 
-各問のパスに対し、ボルトルートで:
+各問のパスに対し、**ボルトルートで**（`cd` 不要）:
 
 ```bash
 python3 scripts/check_question_terms.py --question 問題/午前/R3春期/7.md
 ```
+
+（図の取得はワーカー手順 2.5 で済んでいる想定。未実施の問があれば `python3 scripts/fetch_question_figures.py --apply --question 問題/…` を親が実行してよい）
 
 - 終了コード 1 や一覧外リンクがあれば、**親が最小修正**するか、該当問だけワーカーを再実行する。
 - 全問 OK になったら **1回だけ**:

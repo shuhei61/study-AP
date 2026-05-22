@@ -18,7 +18,7 @@
 ## 必読（作業前に読む）
 
 1. `README.md` の「共通ルール」
-2. `docs/ai/過去問ノート.md`（手順 0〜6 まで。手順 7 は**実行しない**）
+2. `docs/ai/過去問ノート.md`（手順 0〜6・2.5 まで。手順 7 は**実行しない**）
 3. `テンプレート/過去問ノート.md`（HTML 形式）
 
 ## 手順（この順で完了させる）
@@ -46,18 +46,18 @@
 
 ### 2.5. 図（ボルトルート・毎回）
 
+作業ディレクトリはボルトルート。**`cd` は不要。**
+
 ```bash
-cd ~/obsidian/応用情報
 python3 scripts/fetch_question_figures.py --apply --question {{QUESTION_PATH}}
 ```
 
 - **図なし**と出たら次へ（curl 要否の判断は不要。スクリプトが自動判定）
 - 画像のみの選択肢は、ここで `ap-choice-text` に図が入る
 
-### 3〜6. 用語リンク（ボルトルートで実行）
+### 3〜6. 用語リンク（ボルトルート）
 
 ```bash
-cd ~/obsidian/応用情報
 python3 scripts/check_question_terms.py --suggest --question {{QUESTION_PATH}}
 ```
 
