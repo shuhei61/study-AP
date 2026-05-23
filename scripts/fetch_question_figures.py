@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""ap-siken から過去問ノート用の図を取得し、assets/ に保存して HTML に埋め込む。
+"""ap-siken 過去問ページの取得（本文テキスト出力・図の埋め込み）。
 
 使い方:
+  python3 scripts/fetch_question_figures.py --print-source --question 問題/午前/R3春期/7.md
   python3 scripts/fetch_question_figures.py --question 問題/午前/R3春期/14.md
   python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md
-  python3 scripts/fetch_question_figures.py --apply --dry-run --question 問題/午前/R3春期/16.md
+  python3 scripts/fetch_question_figures.py --print-source --apply --question 問題/午前/R3春期/7.md
 
-- 見出し1行目の ap-siken URL から HTML を取得（urllib。AI の WebFetch 禁止とは別）
-- 図が無い問題は「図なし」で終了（ワーカーが curl 要否を判断する必要はない）
-- 画像は assets/問題/{試験パス}/{問番号}/ に保存
-- ap-question / ap-choice-text / ap-explanation に class="ap-fig" の img を挿入
+- --print-source … HTTP で取得し workspace/ap-siken-html/ に一次 HTML を保存して標準出力
+- --apply / 図検出のみ … 一次 HTML のみ使用（HTTP しない。無ければエラー）
+- --print-source --apply … 取得1回で保存・出力・図埋め込み
+- 一次 HTML の削除 … 親が全問完了後に scripts/clear_ap_siken_html_cache.py（オーケストレーター）
 """
 
 from __future__ import annotations
@@ -26,6 +27,19 @@ from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from ap_siken_kakomon import (
+    CHOICE_SUFFIX,
+    USER_AGENT,
+    extract_ap_siken_url_from_note,
+    fetch_and_cache_html,
+    format_kakomon_page_for_ai,
+    load_cached_html,
+    parse_kakomon_page,
+    question_id_from_url,
+    slice_between,
+    validate_kakomon_url,
+)
+from ap_siken_kakomon import KakomonUrlError
 from glossary_lib import (
     QUESTIONS_DIR_NAME,
     QUESTION_TAG,
@@ -34,11 +48,6 @@ from glossary_lib import (
 )
 
 ASSETS_DIR_NAME = "assets"
-CHOICE_SUFFIX = {"a": "ア", "i": "イ", "u": "ウ", "e": "エ"}
-QUESTION_URL_RE = re.compile(
-    r"^#\s+\[[^\]]+\]\((https://www\.ap-siken\.com/kakomon/[^)]+)\)\s*$",
-    re.MULTILINE,
-)
 AP_QUIZ_RE = re.compile(
     r"(<div\s+class=\"ap-quiz\">)(.*?)(</div>\s*)$",
     re.DOTALL | re.IGNORECASE,
@@ -98,22 +107,6 @@ def vault_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-def extract_ap_siken_url(text: str) -> str:
-    m = QUESTION_URL_RE.search(text)
-    if not m:
-        raise SystemExit("見出し1行目に ap-siken の URL がありません（# […](https://www.ap-siken.com/…)）")
-    return m.group(1)
-
-
-def question_id_from_url(url: str) -> tuple[int, str, str]:
-    """(数値, 非ゼロ埋め, 2桁ゼロ埋め) 例: 5 → (5, "5", "05")"""
-    m = QUESTION_NUM_FROM_URL_RE.search(url)
-    if not m:
-        raise SystemExit(f"問番号を URL から取得できません: {url}")
-    n = int(m.group(1))
-    return n, str(n), f"{n:02d}"
-
-
 def matches_question_image(filename: str, unpadded: str, padded: str) -> bool:
     stem = Path(filename).stem
     if stem in (unpadded, padded):
@@ -129,25 +122,6 @@ def matches_question_image(filename: str, unpadded: str, padded: str) -> bool:
 def natural_sort_key(filename: str) -> list:
     stem = Path(filename).stem
     return [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", stem)]
-
-
-def fetch_html(url: str) -> str:
-    req = Request(url, headers={"User-Agent": "obsidian-ap-vault/1.0 (fetch_question_figures)"})
-    try:
-        with urlopen(req, timeout=30) as resp:
-            charset = resp.headers.get_content_charset() or "utf-8"
-            return resp.read().decode(charset, errors="replace")
-    except (HTTPError, URLError) as e:
-        raise SystemExit(f"HTML の取得に失敗: {url}\n  {e}") from e
-
-
-def slice_between(html: str, start_pat: str, end_pat: str) -> str:
-    start = re.search(start_pat, html, re.IGNORECASE | re.DOTALL)
-    if not start:
-        return ""
-    begin = start.end()
-    end = re.search(end_pat, html[begin:], re.IGNORECASE | re.DOTALL)
-    return html[begin : begin + end.start()] if end else html[begin:]
 
 
 def parse_img_tag(tag: str) -> tuple[str, str | None, str | None] | None:
@@ -288,7 +262,7 @@ def download(url: str, dest: Path, dry_run: bool) -> None:
     if dry_run:
         return
     dest.parent.mkdir(parents=True, exist_ok=True)
-    req = Request(url, headers={"User-Agent": "obsidian-ap-vault/1.0 (fetch_question_figures)"})
+    req = Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urlopen(req, timeout=30) as resp:
             dest.write_bytes(resp.read())
@@ -485,13 +459,36 @@ def print_report(
         print("埋め込むには --apply を付けて再実行してください")
 
 
+def resolve_url(args: argparse.Namespace, text: str | None) -> str:
+    if args.url:
+        try:
+            validate_kakomon_url(args.url)
+        except KakomonUrlError as e:
+            raise SystemExit(str(e)) from e
+        return args.url.strip()
+    if text is None:
+        raise SystemExit("--question または --url を指定してください")
+    return extract_ap_siken_url_from_note(text)
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="過去問ノートに ap-siken の図を取得・埋め込み")
+    parser = argparse.ArgumentParser(
+        description="ap-siken 過去問（kakomon）の HTML 取得・本文出力・図埋め込み"
+    )
     parser.add_argument(
         "--question",
         metavar="PATH",
-        required=True,
-        help="問題ノート（例: 問題/午前/R3春期/14.md）",
+        help="問題ノート（例: 問題/午前/R3春期/14.md）。見出しから URL を読む",
+    )
+    parser.add_argument(
+        "--url",
+        metavar="URL",
+        help="見出しの代わりに kakomon URL を直接指定（https://www.ap-siken.com/kakomon/… のみ）",
+    )
+    parser.add_argument(
+        "--print-source",
+        action="store_true",
+        help="問題文・分類・選択肢・解説を標準出力（ノート作成用）",
     )
     parser.add_argument(
         "--apply",
@@ -504,62 +501,106 @@ def main() -> None:
         help="--apply 時はファイルを書き換えない",
     )
     args = parser.parse_args()
+    if not args.question and not args.url:
+        raise SystemExit("--question または --url のいずれかが必要です")
     if args.dry_run and not args.apply:
         raise SystemExit("--dry-run は --apply と併用")
+    detect_only = not args.print_source and not args.apply
+    if detect_only and not args.question:
+        raise SystemExit("図の検出のみのときは --question が必要です")
+    if detect_only and args.url:
+        raise SystemExit("図の検出のみのときは --url は使えません（--question を指定）")
+    if not detect_only and not args.print_source and not args.apply:
+        raise SystemExit("--print-source または --apply のいずれかが必要です")
 
     root = vault_root()
     questions_dir = root / QUESTIONS_DIR_NAME
-    qid = normalize_question_ref(args.question, questions_dir, root)
-    note_path = question_note_path(qid, questions_dir)
-    if not note_path.is_file():
-        raise SystemExit(f"問題ノートが見つかりません: {QUESTIONS_DIR_NAME}/{qid}.md")
-    text = note_path.read_text(encoding="utf-8")
-    if QUESTION_TAG not in text:
-        raise SystemExit(f"{QUESTION_TAG} がありません: {QUESTIONS_DIR_NAME}/{qid}.md")
+    text: str | None = None
+    note_path: Path | None = None
+    qid = ""
 
-    url = extract_ap_siken_url(text)
+    if args.question:
+        qid = normalize_question_ref(args.question, questions_dir, root)
+        note_path = question_note_path(qid, questions_dir)
+        if not note_path.is_file():
+            raise SystemExit(f"問題ノートが見つかりません: {QUESTIONS_DIR_NAME}/{qid}.md")
+        text = note_path.read_text(encoding="utf-8")
+        if args.apply and QUESTION_TAG not in text:
+            raise SystemExit(f"{QUESTION_TAG} がありません: {QUESTIONS_DIR_NAME}/{qid}.md")
+
+    url = resolve_url(args, text)
     _qn, unpadded, padded = question_id_from_url(url)
-    html = fetch_html(url)
-    figures = collect_figures(html, url, unpadded, padded)
 
-    assets_dir = assets_dir_for(qid, root)
-    assets_rel = f"{ASSETS_DIR_NAME}/{QUESTIONS_DIR_NAME}/{qid}"
-    rel_by_file: dict[str, str] = {}
-    downloaded: list[str] = []
+    needs_network = bool(args.print_source)
+    if needs_network:
+        html, cache_path = fetch_and_cache_html(url, root)
+        print(f"HTML 一次ファイル: {cache_path.relative_to(root).as_posix()}", file=sys.stderr)
+    else:
+        html, cache_path = load_cached_html(url, root)
+        print(f"HTML 一次ファイルを使用: {cache_path.relative_to(root).as_posix()}", file=sys.stderr)
 
-    for fig in figures:
-        dest = assets_dir / fig.filename
-        rel_by_file[fig.filename] = rel_src_from_note(note_path, dest)
-        if args.apply:
-            if not args.dry_run:
-                download(fig.src_path, dest, dry_run=False)
-            if not dest.is_file() and not args.dry_run:
-                downloaded.append(fig.filename)
-            elif args.dry_run:
-                downloaded.append(f"{fig.filename} (dry-run)")
-            else:
-                downloaded.append(fig.filename)
-        else:
+    if args.print_source:
+        page = parse_kakomon_page(html, url)
+        print(format_kakomon_page_for_ai(page), end="")
+
+    need_figures = args.apply or detect_only
+    figures = collect_figures(html, url, unpadded, padded) if need_figures else []
+
+    if detect_only or args.apply:
+        if note_path is None:
+            raise SystemExit("図の検出・埋め込みには --question が必要です")
+        assets_dir = assets_dir_for(qid, root)
+        assets_rel = f"{ASSETS_DIR_NAME}/{QUESTIONS_DIR_NAME}/{qid}"
+        rel_by_file: dict[str, str] = {}
+        downloaded: list[str] = []
+
+        for fig in figures:
+            dest = assets_dir / fig.filename
             rel_by_file[fig.filename] = rel_src_from_note(note_path, dest)
+            if args.apply:
+                if not args.dry_run:
+                    download(fig.src_path, dest, dry_run=False)
+                if not dest.is_file() and not args.dry_run:
+                    downloaded.append(fig.filename)
+                elif args.dry_run:
+                    downloaded.append(f"{fig.filename} (dry-run)")
+                else:
+                    downloaded.append(fig.filename)
 
-    new_text = text
-    patched = False
-    if args.apply and figures:
-        new_text = patch_note(text, figures, rel_by_file)
-        patched = new_text != text
-        if patched and not args.dry_run:
-            note_path.write_text(new_text, encoding="utf-8")
+        if args.apply:
+            assert text is not None
+            new_text = text
+            patched = False
+            if figures:
+                new_text = patch_note(text, figures, rel_by_file)
+                patched = new_text != text
+                if patched and not args.dry_run:
+                    note_path.write_text(new_text, encoding="utf-8")
 
-    print_report(
-        note_path=f"{QUESTIONS_DIR_NAME}/{qid}.md",
-        url=url,
-        figures=figures,
-        assets_rel=assets_rel,
-        apply=args.apply,
-        dry_run=args.dry_run,
-        downloaded=downloaded if args.apply else [],
-        patched=patched,
-    )
+            if args.print_source:
+                print()
+            print_report(
+                note_path=f"{QUESTIONS_DIR_NAME}/{qid}.md",
+                url=url,
+                figures=figures,
+                assets_rel=assets_rel,
+                apply=True,
+                dry_run=args.dry_run,
+                downloaded=downloaded,
+                patched=patched,
+            )
+        else:
+            print_report(
+                note_path=f"{QUESTIONS_DIR_NAME}/{qid}.md",
+                url=url,
+                figures=figures,
+                assets_rel=assets_rel,
+                apply=False,
+                dry_run=False,
+                downloaded=[],
+                patched=False,
+            )
+
     sys.exit(0)
 
 

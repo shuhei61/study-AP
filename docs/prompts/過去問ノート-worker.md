@@ -16,34 +16,42 @@
 ## 必読（作業前に読む）
 
 1. `README.md` の「共通ルール」
-2. `docs/ai/過去問ノート.md`（手順 0〜6・2.5 まで。手順 7 は**実行しない**）
+2. `docs/ai/過去問ノート.md`（手順 0〜6。手順 7 の集計は**実行しない**）
 3. `テンプレート/過去問ノート.md`（HTML 形式）
 
 ## 手順（この順で完了させる）
 
-### 0. 取得
+### 0. 見出しだけ先に置く
 
-- `{{AP_SIKEN_URL}}` を **WebFetch 等**で開く（**1回で足りる。再取得のためシェル HTTP は使わない**）
-- **禁止（ap-siken 取得）:** `curl` / `wget` / `urllib.request` / `requests` 等による HTML 取得、HTML パース用の `python3 -c` / `python3 <<'PY'`、**`from fetch_question_figures import fetch_html` 等スクリプト経由の HTML パース**、ネットワーク許可を伴うスクレイピング。図・表が画像だけでも **上記で代替しない**
-- 選択肢が HTML テキストで取れない問題（ap-siken の `selectList`＋表画像のみ等）は、手順 2.5 で表を `ap-question` に埋め込み、`ap-choice-text` はア〜エのみ（シェルで HTML を再取得しない）
-- 図・表の数値が WebFetch に無いとき: 解説テキストに書いてある範囲だけ使う。それ以外は「元ページの図を参照」「要確認」と注記（**推測で表の数値を埋めない**）
-- 取得するもの: 問題文、分類、正解、解説、各選択肢の説明（あれば）
-- 画像のみの部分は「要確認」または元ページ参照の注記（推測で補う場合はその旨）
+- `{{QUESTION_PATH}}` にテンプレートを複製し、**見出し1行目だけ**確定する（他は後で埋める）:
+  - `# [{{EXAM_LABEL}} {{SECTION}} 問{{QUESTION_NUM}}]({{AP_SIKEN_URL}})`
 
-### 1. ファイル作成
+### 1. 本文の取得（スクリプト・1回）
 
-- `{{QUESTION_PATH}}` に保存（既存なら上書き前に内容を確認し、ユーザー指示がなければ上書き可とみなす）
-- 見出し: `# [{{EXAM_LABEL}} {{SECTION}} 問{{QUESTION_NUM}}]({{AP_SIKEN_URL}})`
+**次の1行だけをそのまま実行**（`cd`・`&&` でつなげない）。
+
+```bash
+python3 scripts/fetch_question_figures.py --print-source --question {{QUESTION_PATH}}
+```
+
+- 標準出力の **問題文・分類・正解・選択肢・解説** をもとに手順 2 でノートを書く（HTML は `workspace/ap-siken-html/` に保存。手順 4 の `--apply` はそれを読むだけ）
+- **禁止:** WebFetch / `curl` / `python3 -c` / **`ap_siken_kakomon`・`fetch_question_figures` の import**
+- 選択肢が `[画像のみ: …]` のとき: 手順 2.5 で表を `ap-question` に埋め込み、`ap-choice-text` はア〜エのみ
+- 図・表の数値が出力に無いとき: 解説テキストにある範囲だけ使う。それ以外は「元ページの図を参照」「要確認」（**推測で表の数値を埋めない**）
+
+### 2. ファイル完成
+
+- `{{QUESTION_PATH}}` に本文を保存（既存なら上書き前に内容を確認し、ユーザー指示がなければ上書き可とみなす）
 - 分野タグ: ap-siken「分類」→ `タグ一覧.md` で `#問題` の直後に実タグ（`#大分類` プレースホルダのままにしない）
 - HTML クイズ: テンプレート準拠。**`<div class="ap-quiz">` 内に空行を入れない**
 
-### 2. 本文（用語リンクはまだ付けない）
+### 3. 本文（用語リンクはまだ付けない）
 
 - `ap-question` / `ap-choice-text` / `ap-choice-note` / `ap-explanation`
 - `ap-explanation` は ap-siken の解説に沿う（独自の言い換え・数値の追加はしない。図は「元ページでは図で示されています」等）
 - `ap-choice-note` は `docs/ai/過去問ノート.md` の A/B/C 基準で書く
 
-### 2.5. 図（毎回）
+### 4. 図（毎回）
 
 **次の1行だけをそのまま実行**（`cd`・`&&` でつなげない）。
 
@@ -55,7 +63,7 @@ python3 scripts/fetch_question_figures.py --apply --question {{QUESTION_PATH}}
 - レポートに **「選択肢表（4肢まとめ）」** が出たら、スクリプトが `ap-question` 末尾（問題図の直後）に表画像を埋め込む。各 `ap-choice-text` は **ア／イ／ウ／エ のラベルのみ**（a～d の組合せは表に任せ、テキストで重複させない）
 - 肢ごとに別画像の選択肢は、ここで `ap-choice-text` に図が入る
 
-### 3〜6. 用語リンク
+### 5〜8. 用語リンク
 
 ```bash
 python3 scripts/check_question_terms.py --suggest --question {{QUESTION_PATH}}
@@ -74,8 +82,8 @@ python3 scripts/check_question_terms.py --question {{QUESTION_PATH}}
 ### 実行しないこと
 
 - **`cd`・`&&` でのコマンド連結**（例: `cd … && python3 …`）。各スクリプトは **1行ずつ** `python3 scripts/…` のみ
-- ap-siken の **手動シェル HTTP 取得**（`curl` / `wget` / `python3 -c` / `python3 <<'PY'` / `fetch_question_figures.fetch_html` の import など。本文は WebFetch のみ。**図・選択肢表は `fetch_question_figures.py --apply` のみ**）
-- `python3 scripts/count_term_question_links.py`（親オーケストレーターが全問完了後に1回実行）
+- ap-siken の **手動取得**（WebFetch / `curl` / `python3 -c` / スクリプト import など。**本文は `--print-source`、図は `--apply` のみ**）
+- `python3 scripts/count_term_question_links.py` / `clear_ap_siken_html_cache.py`（親オーケストレーターが全問完了後に1回）
 - `build_tag_index.py` / `build_glossary_index.py`
 - `用語/○○.md` の新規作成
 - `.obsidian/` の編集

@@ -49,7 +49,10 @@
 
 ### 3. ワーカーに任せないこと（親が最後にまとめて実行）
 
-並列実行時のファイル競合を避けるため、ワーカーは **`count_term_question_links.py` を実行しない**。親が全ワーカー完了後に **1回だけ** 実行する。
+並列実行時のファイル競合を避けるため、ワーカーは次を**実行しない**。親が全ワーカー完了後に **1回だけ** 実行する。
+
+- `count_term_question_links.py`
+- `clear_ap_siken_html_cache.py`（`workspace/ap-siken-html/` の一次 HTML 削除）
 
 ワーカーが実行しないもの（親も普段実行しない）:
 
@@ -68,10 +71,11 @@ python3 scripts/check_question_terms.py --question 問題/午前/R3春期/7.md
 （図の取得はワーカー手順 2.5 で済んでいる想定。未実施の問があれば `python3 scripts/fetch_question_figures.py --apply --question 問題/…` を親が実行してよい）
 
 - 終了コード 1 や一覧外リンクがあれば、**親が最小修正**するか、該当問だけワーカーを再実行する。
-- 全問 OK になったら **1回だけ**:
+- 全問 OK になったら **1回だけ**（この順）:
 
 ```bash
 python3 scripts/count_term_question_links.py
+python3 scripts/clear_ap_siken_html_cache.py
 ```
 
 ### 5. ユーザーへの報告
@@ -82,7 +86,7 @@ python3 scripts/count_term_question_links.py
 - 正解（ア〜エ）
 - スキップ・再実行した問があれば理由
 - 照合結果（OK / 修正した点）
-- `用語一覧.md` の（N）更新を実行した旨
+- `用語一覧.md` の（N）更新と一次 HTML キャッシュ削除を実行した旨
 
 ## 親が自分でノートを書いてよい場合
 
@@ -96,7 +100,7 @@ python3 scripts/count_term_question_links.py
 
 - 親がワーカーと同じファイルを同時に編集しない
 - **1 Task に複数問**（「問37〜40を順に」等）— 長時間化し Cursor が停止しやすい
-- ap-siken を **シェル HTTP で取得させない**（`curl` / `wget` / `urllib` / `requests` / `python3 -c` / `python3 <<'PY'` / `fetch_question_figures.fetch_html` の import 等。ワーカーは **WebFetch 等のみ**）
+- ap-siken は **`fetch_question_figures.py` のみ**（`--print-source` で本文、`--apply` で図）。WebFetch / `curl` / スクリプト import 禁止
 - スクリプト実行は **`python3 scripts/…` の1行のみ**（`cd`・`&&` 連結を付けさせない）
 - HTML ブロック内に空行を入れない（ワーカー成果物を直すときも同様）
 - ユーザーの明示がない限り git commit しない

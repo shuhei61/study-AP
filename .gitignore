@@ -1,2 +1,12 @@
 # 用語ページ（ユーザーが学習中に追加。索引はルートの 用語一覧.md）
 用語/*
+
+# ap-siken 過去問 HTML の一次保管（fetch_question_figures --print-source）
+workspace/ap-siken-html/
+
+# Cursor
+.cursor
+
+# Obsidian — ボルト共有設定とスニペット以外（レイアウト・グラフ状態は個人用）
+.obsidian/workspace.json
+.obsidian/graph.json

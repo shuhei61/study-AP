@@ -39,7 +39,7 @@
 
 - 形式: `python3 scripts/<名前>.py …`（**1コマンド1行**。`cd`・`&&` でつなげない）
 - 例: `python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md`
-- ap-siken の本文取得は **WebFetch 等のみ**。`fetch_question_figures.fetch_html` をワーカーが import して HTML をパースしない
+- ap-siken の本文・図は **`python3 scripts/fetch_question_figures.py`** のみ（`--print-source` で HTTP + `workspace/ap-siken-html/` に保存、`--apply` は一次 HTML のみ）。WebFetch・`curl`・import による取得はしない
 - allowlist: [`docs/ai/スクリプト.md`](docs/ai/スクリプト.md)
 
 ### 作業中
