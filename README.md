@@ -40,7 +40,7 @@
 - 形式: `python3 scripts/<名前>.py …`（**1コマンド1行**。`cd`・`&&` でつなげない）
 - 例: `python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md`
 - ap-siken の本文取得は **WebFetch 等のみ**。`fetch_question_figures.fetch_html` をワーカーが import して HTML をパースしない
-- allowlist: [`docs/ai/スクリプト.md`](docs/ai/スクリプト.md) / [`.cursor/rules/scripts-cli.mdc`](.cursor/rules/scripts-cli.mdc)
+- allowlist: [`docs/ai/スクリプト.md`](docs/ai/スクリプト.md)
 
 ### 作業中
 
