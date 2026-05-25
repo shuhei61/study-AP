@@ -19,7 +19,7 @@ import argparse
 import os
 import re
 import sys
-from html import unescape
+from html import escape, unescape
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
@@ -28,11 +28,13 @@ from urllib.request import Request, urlopen
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ap_siken_kakomon import (
+    CHOICE_NOTE_RE,
     CHOICE_SUFFIX,
     USER_AGENT,
     extract_ap_siken_url_from_note,
     fetch_and_cache_html,
     format_kakomon_page_for_ai,
+    html_fragment_to_text,
     load_cached_html,
     parse_kakomon_page,
     question_id_from_url,
@@ -296,6 +298,64 @@ def has_fig_for_file(html: str, filename: str) -> bool:
     return filename in html or Path(filename).name in html
 
 
+IMG_MARGIN_DIV_RE = re.compile(
+    r'<div\s+class="img_margin"[^>]*>.*?</div>',
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def extract_kaisetsu_li_segments(kaisetsu: str) -> list[tuple[str, str | None]]:
+    """解説 #kaisetsu 内の ul>li.li[aeiu] から (テキスト, 画像ファイル名) を aeiu 順に返す。"""
+    segments: list[tuple[str, str | None]] = []
+    for m in CHOICE_NOTE_RE.finditer(kaisetsu):
+        inner = m.group(2)
+        img_fname: str | None = None
+        for tag in IMG_TAG_RE.findall(inner):
+            parsed = parse_img_tag(tag)
+            if not parsed:
+                continue
+            img_fname = figure_filename(parsed[0])
+            if img_fname:
+                break
+        text_html = IMG_MARGIN_DIV_RE.sub("", inner)
+        text = html_fragment_to_text(text_html)
+        if text or img_fname:
+            segments.append((text, img_fname))
+    return segments
+
+
+def explanation_fig_alt(filename: str) -> str:
+    stem = Path(filename).stem
+    parts = stem.split("_", 1)
+    if len(parts) == 2 and parts[1].isdigit():
+        return f"解説図 {parts[1]}"
+    return "解説図"
+
+
+def append_explanation_figure_paragraphs(
+    inner: str,
+    figures: list[Figure],
+    rel_by_file: dict[str, str],
+    *,
+    text: str = "",
+) -> str:
+    for fig in figures:
+        if has_fig_for_file(inner, fig.filename):
+            continue
+        tag = build_img_tag(
+            rel_by_file[fig.filename],
+            explanation_fig_alt(fig.filename),
+            fig.width,
+            fig.height,
+        )
+        if text:
+            body = f"{escape(text)}<br>{tag}"
+        else:
+            body = tag
+        inner += f"<p>{body}</p>"
+    return inner
+
+
 def inject_question(body: str, imgs: list[Figure], rel_by_file: dict[str, str]) -> str:
     if not imgs:
         return body
@@ -363,11 +423,20 @@ def inject_choice_table(body: str, imgs: list[Figure], rel_by_file: dict[str, st
     return AP_QUESTION_RE.sub(repl, body, count=1)
 
 
-def inject_explanation(body: str, imgs: list[Figure], rel_by_file: dict[str, str]) -> str:
+def inject_explanation(
+    body: str,
+    imgs: list[Figure],
+    rel_by_file: dict[str, str],
+    *,
+    kaisetsu: str = "",
+) -> str:
     if not imgs:
         return body
 
     imgs_sorted = sorted(imgs, key=lambda f: natural_sort_key(f.filename))
+    fig_by_name = {f.filename: f for f in imgs_sorted}
+    li_segments = extract_kaisetsu_li_segments(kaisetsu) if kaisetsu else []
+    li_has_images = li_segments and any(fname for _, fname in li_segments)
 
     def repl(m: re.Match[str]) -> str:
         inner = strip_placeholders(m.group(2))
@@ -375,48 +444,104 @@ def inject_explanation(body: str, imgs: list[Figure], rel_by_file: dict[str, str
         if not pending:
             return m.group(1) + inner + m.group(3)
 
-        paras = list(re.finditer(r"(<p>.*?</p>)", inner, re.DOTALL))
-        if not paras:
-            for fig in pending:
+        if li_has_images:
+            li_fnames = {fname for _, fname in li_segments if fname}
+            pending_non_li = [f for f in pending if f.filename not in li_fnames]
+            for text, fname in li_segments:
+                if not fname or fname not in fig_by_name:
+                    continue
+                if has_fig_for_file(inner, fname):
+                    if text and text not in inner:
+                        img_in_p = re.search(
+                            rf"(<p[^>]*>)(.*?<img[^>]*{re.escape(fname)}[^>]*>.*?</p>)",
+                            inner,
+                            re.DOTALL | re.IGNORECASE,
+                        )
+                        if img_in_p and escape(text) not in img_in_p.group(2):
+                            inner = (
+                                inner[: img_in_p.start()]
+                                + img_in_p.group(1)
+                                + escape(text)
+                                + "<br>"
+                                + img_in_p.group(2)
+                                + inner[img_in_p.end() :]
+                            )
+                        else:
+                            inner += f"<p>{escape(text)}</p>"
+                    continue
+                fig = fig_by_name[fname]
                 tag = build_img_tag(
-                    rel_by_file[fig.filename], "解説図", fig.width, fig.height
+                    rel_by_file[fig.filename],
+                    explanation_fig_alt(fig.filename),
+                    fig.width,
+                    fig.height,
                 )
-                inner = inner.rstrip() + f"<p>{tag}</p>"
-            return m.group(1) + inner + m.group(3)
+                if text:
+                    inner += f"<p>{escape(text)}<br>{tag}</p>"
+                else:
+                    inner += f"<p>{tag}</p>"
+            pending = pending_non_li
 
-        strong_idxs = [i for i, p in enumerate(paras) if "<strong>" in p.group(1)]
-        if len(pending) == 1 and not strong_idxs:
-            # 解説ブロック先頭の1枚（模式図など。ap-siken の kaisetsu 冒頭配置）
-            target_indices = [0]
-        elif len(strong_idxs) >= len(pending):
-            target_indices = strong_idxs[: len(pending)]
-        else:
-            start = max(0, len(paras) - len(pending))
-            target_indices = list(range(start, len(paras)))[: len(pending)]
-
-        img_by_para = dict(zip(target_indices, pending))
-        parts: list[str] = []
-        last = 0
-        for i, pm in enumerate(paras):
-            parts.append(inner[last : pm.start()])
-            p_html = pm.group(1)
-            fig = img_by_para.get(i)
-            if fig:
-                tag = build_img_tag(
-                    rel_by_file[fig.filename], "解説図", fig.width, fig.height
+        if pending:
+            paras = list(re.finditer(r"(<p>.*?</p>)", inner, re.DOTALL))
+            if not paras:
+                inner = append_explanation_figure_paragraphs(
+                    inner, pending, rel_by_file
                 )
-                parts.append(p_html + f"<p>{tag}</p>")
             else:
-                parts.append(p_html)
-            last = pm.end()
-        parts.append(inner[last:])
-        inner = "".join(parts)
+                strong_idxs = [
+                    i for i, p in enumerate(paras) if "<strong>" in p.group(1)
+                ]
+                if len(pending) == 1 and not strong_idxs:
+                    # 解説ブロック先頭の1枚（模式図など。ap-siken の kaisetsu 冒頭配置）
+                    target_indices = [0]
+                elif len(strong_idxs) >= len(pending):
+                    target_indices = strong_idxs[: len(pending)]
+                else:
+                    start = max(0, len(paras) - len(pending))
+                    target_indices = list(range(start, len(paras)))[: len(pending)]
+
+                img_by_para = dict(zip(target_indices, pending))
+                parts: list[str] = []
+                last = 0
+                for i, pm in enumerate(paras):
+                    parts.append(inner[last : pm.start()])
+                    p_html = pm.group(1)
+                    fig = img_by_para.get(i)
+                    if fig:
+                        tag = build_img_tag(
+                            rel_by_file[fig.filename],
+                            explanation_fig_alt(fig.filename),
+                            fig.width,
+                            fig.height,
+                        )
+                        parts.append(p_html + f"<p>{tag}</p>")
+                    else:
+                        parts.append(p_html)
+                    last = pm.end()
+                parts.append(inner[last:])
+                inner = "".join(parts)
+                still_pending = [
+                    f
+                    for f in pending
+                    if not has_fig_for_file(inner, f.filename)
+                ]
+                inner = append_explanation_figure_paragraphs(
+                    inner, still_pending, rel_by_file
+                )
+
         return m.group(1) + inner + m.group(3)
 
     return AP_EXPLANATION_RE.sub(repl, body, count=1)
 
 
-def patch_note(text: str, figures: list[Figure], rel_by_file: dict[str, str]) -> str:
+def patch_note(
+    text: str,
+    figures: list[Figure],
+    rel_by_file: dict[str, str],
+    *,
+    kaisetsu: str = "",
+) -> str:
     m = AP_QUIZ_RE.search(text)
     if not m:
         raise SystemExit("ap-quiz ブロックが見つかりません")
@@ -430,7 +555,7 @@ def patch_note(text: str, figures: list[Figure], rel_by_file: dict[str, str]) ->
     body = inject_question(body, q_imgs, rel_by_file)
     body = inject_choices(body, c_imgs, rel_by_file)
     body = inject_choice_table(body, t_imgs, rel_by_file)
-    body = inject_explanation(body, e_imgs, rel_by_file)
+    body = inject_explanation(body, e_imgs, rel_by_file, kaisetsu=kaisetsu)
 
     return text[: m.start(2)] + body + text[m.end(2) :]
 
@@ -592,7 +717,10 @@ def main() -> None:
             new_text = text
             patched = False
             if figures:
-                new_text = patch_note(text, figures, rel_by_file)
+                kaisetsu = slice_kaisetsu(html)
+                new_text = patch_note(
+                    text, figures, rel_by_file, kaisetsu=kaisetsu
+                )
                 patched = new_text != text
                 if patched and not args.dry_run:
                     note_path.write_text(new_text, encoding="utf-8")
