@@ -39,7 +39,8 @@
 
 - 形式: `python3 scripts/<名前>.py …`（**1コマンド1行**。`cd`・`&&` でつなげない）
 - 例: `python3 scripts/fetch_question_figures.py --apply --question 問題/午前/R3春期/16.md`
-- ap-siken の本文・図は **`python3 scripts/fetch_question_figures.py`** のみ（`--print-source` で HTTP + `workspace/ap-siken-html/` に保存、`--apply` は一次 HTML のみ）。WebFetch・`curl`・import による取得はしない
+- ap-siken の本文・図は **`python3 scripts/fetch_question_figures.py`** のみ（`--print-source` で HTTP + `workspace/ap-siken-html/` に保存、`--apply` は一次 HTML のみ）。WebFetch・ブラウザ・`curl`・import は使わない（IDE の URL 許可要求も承認しない）
+- 過去問の複数問作成: [`docs/prompts/過去問ノート-orchestrator.md`](docs/prompts/過去問ノート-orchestrator.md)（**1 Task = 1問・同時最大4 Task**）
 - allowlist: [`docs/ai/スクリプト.md`](docs/ai/スクリプト.md)
 
 ### 作業中

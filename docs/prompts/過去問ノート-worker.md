@@ -11,7 +11,21 @@
 | 回 | {{TERM_DIR}} |
 | 問番号 | {{QUESTION_NUM}} |
 | 保存先 | `{{QUESTION_PATH}}` |
-| ap-siken | {{AP_SIKEN_URL}} |
+| 出典URL（**閲覧しない**） | {{AP_SIKEN_URL}} |
+
+## ap-siken 取得（厳守・最優先）
+
+**ap-siken の本文・図は `fetch_question_figures.py` だけ。** 見出しの URL をブラウザや WebFetch で開かない。
+
+| やること | コマンド |
+|----------|----------|
+| 本文・分類・正解・解説 | `python3 scripts/fetch_question_figures.py --print-source --question {{QUESTION_PATH}}`（**1回**。失敗時は同じ1行を再実行） |
+| 図の埋め込み | `python3 scripts/fetch_question_figures.py --apply --question {{QUESTION_PATH}}`（一次 HTML のみ。再 HTTP しない） |
+
+**絶対に使わない:** WebFetch / `mcp_web_fetch` / ブラウザツール / `curl` / `wget` / `python3 -c` / `ap_siken_kakomon`・`fetch_question_figures` の **import**
+**IDE が WebFetch や URL 閲覧の許可を求めたら:** **拒否（Skip）** する。許可して取得しない。上記 `--print-source` の1行を実行する。
+**`--print-source` が空・エラーの時は、その旨を伝え手順を終了する** 
+
 
 ## 必読（作業前に読む）
 
@@ -21,10 +35,12 @@
 
 ## 手順（この順で完了させる）
 
-### 0. 見出しだけ先に置く
+### 0. 見出しだけ先に置く（**URLは開かない**）
 
 - `{{QUESTION_PATH}}` にテンプレートを複製し、**見出し1行目だけ**確定する（他は後で埋める）:
   - `# [{{EXAM_LABEL}} {{SECTION}} 問{{QUESTION_NUM}}]({{AP_SIKEN_URL}})`
+- 見出しの `{{AP_SIKEN_URL}}` は **Obsidian 用の出典リンク文字列**（タスク表の値をそのまま貼るだけ）。**WebFetch・ブラウザで開かない。** 問題文・解説の取得は **手順1** の `--print-source` だけ。
+- スクリプトは見出しの URL から問を特定するため、**先にこの1行だけ**置く（= 手順0 → 手順1 の順は変えない）。
 
 ### 1. 本文の取得（スクリプト・1回）
 
@@ -35,7 +51,7 @@ python3 scripts/fetch_question_figures.py --print-source --question {{QUESTION_P
 ```
 
 - 標準出力の **問題文・分類・正解・選択肢・解説** をもとに手順 2 でノートを書く（HTML は `workspace/ap-siken-html/` に保存。手順 4 の `--apply` はそれを読むだけ）
-- **禁止:** WebFetch / `curl` / `python3 -c` / **`ap_siken_kakomon`・`fetch_question_figures` の import**
+- 上記 **「ap-siken 取得（厳守）」** に従う（WebFetch 許可ダイアログは拒否してスクリプトに戻る）
 - 選択肢が `[画像のみ: …]` のとき: 手順 2.5 で表を `ap-question` に埋め込み、`ap-choice-text` はア〜エのみ
 - 図・表の数値が出力に無いとき: 解説テキストにある範囲だけ使う。それ以外は「元ページの図を参照」「要確認」（**推測で表の数値を埋めない**）
 
@@ -91,7 +107,8 @@ python3 scripts/check_question_terms.py --question {{QUESTION_PATH}}
 ### 実行しないこと
 
 - **`cd`・`&&` でのコマンド連結**（例: `cd … && python3 …`）。各スクリプトは **1行ずつ** `python3 scripts/…` のみ
-- ap-siken の **手動取得**（WebFetch / `curl` / `python3 -c` / スクリプト import など。**本文は `--print-source`、図は `--apply` のみ**）
+- ap-siken の **手動取得**（WebFetch・ブラウザ・`curl`・`wget`・`python3 -c`・スクリプト import。**本文は `--print-source`、図は `--apply` のみ**）
+- **{{AP_SIKEN_URL}} を WebFetch で開くこと**（見出しリンク用。取得はスクリプトのみ）
 - `python3 scripts/count_term_question_links.py` / `clear_ap_siken_html_cache.py`（親オーケストレーターが全問完了後に1回）
 - `build_tag_index.py` / `build_glossary_index.py`
 - `用語/○○.md` の新規作成
@@ -107,3 +124,4 @@ python3 scripts/check_question_terms.py --question {{QUESTION_PATH}}
 3. 付与した用語リンク一覧
 4. 照合コマンドの結果（OK / 修正した内容）
 5. 要確認にした箇所があればその旨
+6. ap-siken 取得: **`--print-source` のみ** / WebFetch は**未使用**（使った場合は正直に記載）
