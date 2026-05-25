@@ -160,6 +160,34 @@ def slice_between(html: str, start_pat: str, end_pat: str) -> str:
     return html[begin : begin + end.start()] if end else html[begin:]
 
 
+KAISETSU_OPEN_RE = re.compile(
+    r'<div[^>]*\bid=["\']?kaisetsu["\']?[^>]*>',
+    re.IGNORECASE,
+)
+_BALANCED_DIV_TAG_RE = re.compile(r"</div\s*>|<div\s", re.IGNORECASE)
+
+
+def _slice_balanced_div_inner(html: str, inner_start: int) -> str:
+    """opening <div> の直後から、対応する </div> の手前まで。"""
+    depth = 1
+    for m in _BALANCED_DIV_TAG_RE.finditer(html, inner_start):
+        if m.group(0).lower().startswith("</div"):
+            depth -= 1
+            if depth == 0:
+                return html[inner_start : m.start()]
+        else:
+            depth += 1
+    return html[inner_start:]
+
+
+def slice_kaisetsu(html: str) -> str:
+    """#kaisetsu ブロックの内側（img_margin 等の入れ子 div を含む）。"""
+    m = KAISETSU_OPEN_RE.search(html)
+    if not m:
+        return ""
+    return _slice_balanced_div_inner(html, m.end())
+
+
 def html_fragment_to_text(fragment: str) -> str:
     if not fragment:
         return ""
@@ -194,7 +222,7 @@ def parse_kakomon_page(html: str, url: str) -> KakomonPage:
         kana = CHOICE_SUFFIX.get(suffix, suffix)
         choices[kana] = _choice_text_from_span(m.group(2))
 
-    kaisetsu = slice_between(html, r'<div[^>]*id="kaisetsu"[^>]*>', r"</div>\s*<div")
+    kaisetsu = slice_kaisetsu(html)
     choice_notes: dict[str, str] = {}
     for m in CHOICE_NOTE_RE.finditer(kaisetsu):
         suffix = m.group(1).lower()

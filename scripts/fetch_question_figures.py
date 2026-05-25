@@ -37,6 +37,7 @@ from ap_siken_kakomon import (
     parse_kakomon_page,
     question_id_from_url,
     slice_between,
+    slice_kaisetsu,
     validate_kakomon_url,
 )
 from ap_siken_kakomon import KakomonUrlError
@@ -176,7 +177,7 @@ def figure_filename(src: str) -> str | None:
 
 def collect_figures(html: str, page_url: str, unpadded: str, padded: str) -> list[Figure]:
     mondai = slice_between(html, r'<div id="mondai"[^>]*>', r'<div class="ansbg"')
-    kaisetsu = slice_between(html, r'<div[^>]*id="kaisetsu"[^>]*>', r"</div>\s*<div")
+    kaisetsu = slice_kaisetsu(html)
     first_ansbg = slice_between(html, r'<div class="ansbg"[^>]*>\s*<ul class="selectList', r"</ul>")
     choice_block = first_ansbg if first_ansbg else ""
 
