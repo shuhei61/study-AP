@@ -233,12 +233,6 @@ def collect_figures(html: str, page_url: str, unpadded: str, padded: str) -> lis
                 continue
             if not matches_question_image(fname, unpadded, padded):
                 continue
-            if not re.fullmatch(
-                rf"{re.escape(unpadded)}(?:a)?\.(?:png|gif|jpe?g)$",
-                fname,
-                re.IGNORECASE,
-            ):
-                continue
             seen.add(fname)
             figures.append(
                 Figure(
