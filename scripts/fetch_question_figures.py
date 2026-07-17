@@ -80,9 +80,9 @@ AP_FIG_RE = re.compile(
     re.IGNORECASE,
 )
 QUESTION_NUM_FROM_URL_RE = re.compile(r"/q(\d+)\.html", re.IGNORECASE)
-# 問番号.png / 29_1.png / 選択肢 29a.png / 解説の演算結果 29ii.png など
+# 問番号.png / 29_1.png / 選択肢 29a.png / 解説 29ii.png / 第2検証 23iii.png など
 FIGURE_IMG_NAME_RE = re.compile(
-    r"^\d+(?:_\d+)?(?:[aeiu]{1,2})?\.(png|gif|jpe?g)$",
+    r"^\d+(?:_\d+)?(?:[aeiu]{1,3})?\.(png|gif|jpe?g)$",
     re.IGNORECASE,
 )
 _CHOICE_LETTER_ORDER = {"a": 0, "i": 1, "u": 2, "e": 3}
@@ -119,13 +119,14 @@ def matches_question_image(filename: str, unpadded: str, padded: str) -> bool:
     for prefix in (unpadded, padded):
         if stem.startswith(f"{prefix}_"):
             return True
-        if re.fullmatch(rf"{re.escape(prefix)}[aeiu]{{1,2}}", stem, re.IGNORECASE):
+        # 1〜3連（例: 23a / 23aa / 23iii・23uuu＝第2検証図）
+        if re.fullmatch(rf"{re.escape(prefix)}[aeiu]{{1,3}}", stem, re.IGNORECASE):
             return True
     return False
 
 
 def natural_sort_key(filename: str) -> list:
-    """29_1 → 29ii → 29uu のように、連番サフィックスを aeiu 系より先に並べる。"""
+    """29_1 → 29ii → 29uu → 29iii のように、連番サフィックスを aeiu 系より先に並べる。"""
     stem = Path(filename).stem
     m = re.match(r"^(\d+)(?:_(\d+))?([aeiu]*)$", stem, re.IGNORECASE)
     if not m:
@@ -141,7 +142,9 @@ def natural_sort_key(filename: str) -> list:
         return (qnum, 2, _CHOICE_LETTER_ORDER.get(suffix, 9), suffix)
     if len(suffix) == 2 and suffix[0] == suffix[1]:
         return (qnum, 3, _CHOICE_LETTER_ORDER.get(suffix[0], 9), suffix)
-    return (qnum, 4, suffix)
+    if len(suffix) == 3 and len(set(suffix)) == 1:
+        return (qnum, 4, _CHOICE_LETTER_ORDER.get(suffix[0], 9), suffix)
+    return (qnum, 5, suffix)
 
 
 def parse_img_tag(tag: str) -> tuple[str, str | None, str | None] | None:
